@@ -244,7 +244,7 @@ void taskEnd(@NonNull DownloadTask task, @NonNull EndCause cause, @Nullable Exce
 ![](https://docs.qnsdk.com/listener.png)
 
 
-### 下载步骤
+### 主要步骤
 
 1. 下载前检查 ：DownloadDispatcher
 	- 检查本地是否已经存在 passIfAlreadyCompleted ? COMPLETED : 重新下载
