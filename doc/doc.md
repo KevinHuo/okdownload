@@ -7,7 +7,7 @@
 
 
 ```
-task = new DownloadTask.Builder(url, parentFile)
+DownloadTask task = new DownloadTask.Builder(url, parentFile)
 
                 .setFilename(filename) //设置下载文件名，没提供的话先看 response header ，再看 url path(即启用下面那项配置)
 
@@ -34,8 +34,6 @@ task = new DownloadTask.Builder(url, parentFile)
                 .setFlushBufferSize(16384) //设置写入缓存区大小，默认16384
 
                 .setSyncBufferSize(65536) //写入到文件的缓冲区大小，默认65536
-
-                .setSyncBufferIntervalMillis(2000) //写入文件的最小时间间隔，默认2000
 
                 .build();
                 
@@ -97,6 +95,10 @@ context.startOnParallel(listener);
 
 // stop
 context.stop();
+
+// 获取 Task 列表
+DownloadTask[] context.getTasks()
+
 ```
 
 ### 合并 Listener
@@ -114,6 +116,28 @@ DownloadTask task = new DownloadTask.build(url, file).build();
 task.enqueue(combinedListener);
 ```
 
+### Listener 与 Download 关系管理
+
+```
+UnifiedListenerManager manager = new UnifiedListenerManager();
+
+DownloadListener listener1 = new DownloadListener1();
+DownloadListener listener2 = new DownloadListener2();
+DownloadListener listener3 = new DownloadListener3();
+DownloadListener listener4 = new DownloadListener4();
+
+DownloadTask task = new DownloadTask.build(url, file).build();
+
+manager.attachListener(task, listener1);
+manager.attachListener(task, listener2);
+
+manager.detachListener(task, listener2);
+
+manager.enqueueTaskWithUnifiedListener(task, listener3);
+manager.executeTaskWithUnifiedListener(task, listener3);
+
+manager.attachListener(task, listener4);
+```
 
 ### 动态任务队列
 ```
@@ -217,10 +241,7 @@ void taskEnd(@NonNull DownloadTask task, @NonNull EndCause cause, @Nullable Exce
 }
 ```
 
-![][listener_img]
-
-[listener_img]: http://ps7907cdy.bkt.clouddn.com/listener.png
-
+![](https://docs.qnsdk.com/listener.png)
 
 
 ### 下载步骤
