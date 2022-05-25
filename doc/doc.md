@@ -217,7 +217,7 @@ void taskEnd(@NonNull DownloadTask task, @NonNull EndCause cause, @Nullable Exce
 }
 ```
 
-![](http://ps7907cdy.bkt.clouddn.com/listener.png)
+![](https://docs.qnsdk.com/listener.png)
 
 
 ### 下载步骤
