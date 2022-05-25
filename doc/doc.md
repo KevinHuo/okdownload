@@ -217,10 +217,7 @@ void taskEnd(@NonNull DownloadTask task, @NonNull EndCause cause, @Nullable Exce
 }
 ```
 
-![][listener_img]
-
-[listener_img]: http://ps7907cdy.bkt.clouddn.com/listener.png
-
+![](http://ps7907cdy.bkt.clouddn.com/listener.png)
 
 
 ### 下载步骤
