@@ -156,6 +156,29 @@ int waitingTaskCount = serialQueue.getWaitingTaskCount();
 DownloadTask[] discardTasks = serialQueue.shutdown();
 ```
 
+### BreakpointInfo
+```
+class BreakpointInfo {
+int getId();
+boolean isSingleBlock();
+BlockInfo getBlock(int blockIndex);
+long getTotalLength();
+long getTotalOffset();
+String getUrl();
+public String getFilename();
+}
+```
+
+### BlockInfo
+```
+class BlockInfo {
+long getContentLength();
+long getCurrentOffset();
+long getRangeLeft();
+long getRangeRight();
+}
+```
+
 #### DownloadListener 
 
 ```
@@ -246,40 +269,37 @@ void taskEnd(@NonNull DownloadTask task, @NonNull EndCause cause, @Nullable Exce
 
 ### 下载步骤
 
-1. 下载前检查 ：DownloadDispatcher
+1. 任务的调度和检查 ：DownloadDispatcher
 	- 检查本地是否已经存在 passIfAlreadyCompleted ? COMPLETED : 重新下载
 	- 检查任务是否冲突，是否有相同的任务已经在任务队列里面了 ：SAME_TASK_BUSY
-	- 检查文件是否冲突，是否有两个任务的 url 相同 ：FILE_BUSY
+	- 检查文件是否冲突，是否有两个任务的 uri 相同 ：FILE_BUSY
 	- 通过一个 DownloadTask 创建一个 DownloadCall
-	- 检查当前正在并行的任务数量是否超过最大并行数量，如果超过则加入到 readyAsyncCalls，否则就加入到 runningAsyncCalls，并 execute
+	- 检查当前正在并行的任务数量是否超过最大并行数量，如果超过则加入到准备队列中，没有超过就加入到运行队列中，并调用 DownloadCall 的 execute 方法
 
-2. 一个任务下载执行 ：DownloadCall  
+2. 一个任务真正开始下载执行 ：DownloadCall  
 	- 任务开始，进行回调 taskStart
 	- 检查 task 的参数是否合理（url length > 0 ?）
-	- 从数据库里拿断点信息，如果找不到则创建一个新的，并合 task 绑定
-	- 创建一个 DownloadConnection 与服务器进行建立连接
+	- 从数据库里拿断点信息 BreakpointInfo，如果找不到则创建一个新的
+	- 创建一个 DownloadConnection 与服务器进行建立连接（Range ：bytes=0-0）
 	- 对远端服务器进行检查，检查是否支持断点续传，并获取文件大小， etag，是否 chunked 等信息
-	- 从远端服务器来检查之前的断点信息是否能够恢复，比如之前检查的 http response 是 201，205 则无法恢复
-	- 从本地文件和断点信息来检查是否能够恢复，比如本地文件是否已经被删除，断点信息是否和本地文件不匹配，则不允许恢复
+	- 从远端服务器获取信息来检查是否出现异常
+	- 检查本地文件和断点信息是否匹配，比如本地文件是否已经被删除
 	- 如果不允许恢复
 		- 把本地文件删除
 		- 重新把一个任务平均分块（默认策略 ：文件大小在0-1MB、1-5MB、5-50MB、50-100MB、100MB以上时分别开启1、2、3、4、5个线程进行下载。）然后把信息更新到 BreakpointInfo 中
 		- 回调用户 ：downloadFromBeginning
 		- 通过 task 中 BreakpointInfo 开始下载
 	- 如果允许恢复，则从断点处开始下载
-		- 回调用户 ：downloadFromBeginning
+		- 回调用户 ：downloadFromBreakpoint
 		- 通过 task 中 BreakpointInfo 开始下载
-	- 通过  BreakpointInfo 中的信息把一个 DownloadCall 分解为多个 block 子任务进行下载
+	- 通过 BreakpointInfo 中的信息把一个 DownloadCall 分解为多个 block 子任务进行下载
 
-3. 一个 block 的下载执行 ：DownloadChain
+3. 一个 block 开始下载执行 ：DownloadChain
 	- 创建一个 DownloadConnection ，如果有重定向，则直接用重定向之后的地址进行创建
 	- 增加 header，包括 User-Agent ，Range ，If-Match等
 	- 开始建立连接，回调 connectStart
 	- 链接结束，得到 ResponseCode，ResponseHeaderFields 等信息，并回调 connectEnd
-	- 检查是否能够恢复
-	- 更新信息 responseContentLength
-	- 异常判定：block num 为 1 时，response 获取的 length 与存储的 info 的 length 不一致，则更新 info ，并重新下载
-	-  如果没有异常，开始写文件
-	-  outputStream 要先进行 seek 到 Range 处再开始写入
-
-
+	- 再次进行异常检查，比如只有一个 block 的时候，response 获取的 length 与 info 的 length 不一致，则更新 info ，并重新下载
+	- 如果没有异常，开始写文件
+	- outputStream 要先进行 seek 到 Range left 处再开始写入
+	-  所有的 block 下载完，任务结束
