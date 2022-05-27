@@ -111,6 +111,24 @@ interface DownloadContextListener {
 }
 ```
 
+### 动态任务队列
+```
+DownloadSerialQueue serialQueue = new DownloadSerialQueue(downloadListener);
+
+serialQueue.enqueue(task1);
+serialQueue.enqueue(task2);
+
+serialQueue.pause();
+
+serialQueue.resume();
+
+DownloadTask[] discardTasks = serialQueue.shutdown();
+
+int workingTaskId = serialQueue.getWorkingTaskId();
+int waitingTaskCount = serialQueue.getWaitingTaskCount();
+
+```
+
 ### 合并 Listener
 
 ```
@@ -149,22 +167,6 @@ manager.executeTaskWithUnifiedListener(task, listener3);
 manager.attachListener(task, listener4);
 ```
 
-### 动态任务队列
-```
-DownloadSerialQueue serialQueue = new DownloadSerialQueue(commonListener);
-
-serialQueue.enqueue(task1);
-serialQueue.enqueue(task2);
-
-serialQueue.pause();
-
-serialQueue.resume();
-
-int workingTaskId = serialQueue.getWorkingTaskId();
-int waitingTaskCount = serialQueue.getWaitingTaskCount();
-
-DownloadTask[] discardTasks = serialQueue.shutdown();
-```
 
 ### BreakpointInfo
 ```
