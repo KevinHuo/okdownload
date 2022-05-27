@@ -1,6 +1,6 @@
 # okdownload
 
-## 使用方法
+## API
 
 ### 单个任务下载
 
@@ -101,6 +101,16 @@ DownloadTask[] context.getTasks()
 
 ```
 
+### DownloadContextListener
+```
+interface DownloadContextListener {
+    void taskEnd(DownloadContext context, DownloadTask task,
+                 EndCause cause, Exception realCause, int remainCount);
+
+    void queueEnd(DownloadContext context);
+}
+```
+
 ### 合并 Listener
 
 ```
@@ -156,21 +166,44 @@ int waitingTaskCount = serialQueue.getWaitingTaskCount();
 DownloadTask[] discardTasks = serialQueue.shutdown();
 ```
 
+### BreakpointInfo
+```
+class BreakpointInfo {
+int getId();
+boolean isSingleBlock();
+BlockInfo getBlock(int blockIndex);
+long getTotalLength();
+long getTotalOffset();
+String getUrl();
+public String getFilename();
+}
+```
+
+### BlockInfo
+```
+class BlockInfo {
+long getContentLength();
+long getCurrentOffset();
+long getRangeLeft();
+long getRangeRight();
+}
+```
+
 #### DownloadListener 
 
 ```
 interface DownloadListener {
-void taskStart(@NonNull DownloadTask task);
-void connectTrialStart(@NonNull DownloadTask task, @NonNull Map<String, List<String>> requestHeaderFields);
-void connectTrialEnd(@NonNull DownloadTask task, int responseCode, @NonNull Map<String, List<String>> responseHeaderFields);
-void downloadFromBeginning(@NonNull DownloadTask task, @NonNull BreakpointInfo info, @NonNull ResumeFailedCause cause);
-void downloadFromBreakpoint(@NonNull DownloadTask task, @NonNull BreakpointInfo info)
-void connectStart(@NonNull DownloadTask task, int blockIndex, @NonNull Map<String, List<String>> requestHeaderFields);
-void connectEnd(@NonNull DownloadTask task, int blockIndex, int responseCode, @NonNull Map<String, List<String>> responseHeaderFields);
-void fetchStart(@NonNull DownloadTask task, int blockIndex, long contentLength);
-void fetchProgress(@NonNull DownloadTask task, int blockIndex, long increaseBytes);
-void fetchEnd(@NonNull DownloadTask task, int blockIndex, long contentLength);
-void taskEnd(@NonNull DownloadTask task, @NonNull EndCause cause, @Nullable Exception realCause);
+void taskStart(DownloadTask task);
+void connectTrialStart(DownloadTask task, Map<String, List<String>> requestHeaderFields);
+void connectTrialEnd(DownloadTask task, int responseCode, Map<String, List<String>> responseHeaderFields);
+void downloadFromBeginning(DownloadTask task, BreakpointInfo info,  ResumeFailedCause cause);
+void downloadFromBreakpoint(DownloadTask task, BreakpointInfo info)
+void connectStart(DownloadTask task, int blockIndex, Map<String, List<String>> requestHeaderFields);
+void connectEnd(DownloadTask task, int blockIndex, int responseCode, Map<String, List<String>> responseHeaderFields);
+void fetchStart(DownloadTask task, int blockIndex, long contentLength);
+void fetchProgress(DownloadTask task, int blockIndex, long increaseBytes);
+void fetchEnd(DownloadTask task, int blockIndex, long contentLength);
+void taskEnd(DownloadTask task, EndCause cause, Exception realCause);
 }
 
 ```
@@ -179,11 +212,11 @@ void taskEnd(@NonNull DownloadTask task, @NonNull EndCause cause, @Nullable Exce
 
 ```
 class DownloadListener1 {
-void taskStart(@NonNull DownloadTask task, @NonNull Listener1Assist.Listener1Model model);
-void retry(@NonNull DownloadTask task, @NonNull ResumeFailedCause cause);
-void connected(@NonNull DownloadTask task, int blockCount, long currentOffset, long totalLength);
-void progress(@NonNull DownloadTask task, long currentOffset, long totalLength);
-void taskEnd(@NonNull DownloadTask task, @NonNull EndCause cause, @Nullable Exception realCause, @NonNull Listener1Assist.Listener1Model model);
+void taskStart(DownloadTask task, Listener1Assist.Listener1Model model);
+void retry(DownloadTask task, ResumeFailedCause cause);
+void connected(DownloadTask task, int blockCount, long currentOffset, long totalLength);
+void progress(DownloadTask task, long currentOffset, long totalLength);
+void taskEnd(DownloadTask task, EndCause cause, Exception realCause, Listener1Assist.Listener1Model model);
 }
 ```
 
@@ -191,8 +224,8 @@ void taskEnd(@NonNull DownloadTask task, @NonNull EndCause cause, @Nullable Exce
 
 ```
 class DownloadListener2 {
-void taskStart(@NonNull DownloadTask task);
-void taskEnd(@NonNull DownloadTask task, @NonNull EndCause cause, @Nullable Exception realCause);
+void taskStart(DownloadTask task);
+void taskEnd(DownloadTask task, EndCause cause, Exception realCause);
 }
 ```
 
@@ -200,14 +233,14 @@ void taskEnd(@NonNull DownloadTask task, @NonNull EndCause cause, @Nullable Exce
 
 ```
 class DownloadListener3 {
-void started(@NonNull DownloadTask task);
-void completed(@NonNull DownloadTask task);
-void canceled(@NonNull DownloadTask task);
-void error(@NonNull DownloadTask task, @NonNull Exception e);
-void warn(@NonNull DownloadTask task);
-void retry(@NonNull DownloadTask task, @NonNull ResumeFailedCause cause);
-void connected(@NonNull DownloadTask task, int blockCount, long currentOffset, long totalLength);
-void progress(@NonNull DownloadTask task, long currentOffset, long totalLength);
+void started(DownloadTask task);
+void completed(DownloadTask task);
+void canceled(DownloadTask task);
+void error(DownloadTask task, Exception e);
+void warn(DownloadTask task);
+void retry(DownloadTask task, ResumeFailedCause cause);
+void connected(DownloadTask task, int blockCount, long currentOffset, long totalLength);
+void progress(DownloadTask task, long currentOffset, long totalLength);
 }       
 ```
 
@@ -215,14 +248,14 @@ void progress(@NonNull DownloadTask task, long currentOffset, long totalLength);
 
 ```
 class DownloadListener4 {
-void taskStart(@NonNull DownloadTask task);
-void connectStart(@NonNull DownloadTask task, int blockIndex, @NonNull Map<String, List<String>> requestHeaderFields);
-void connectEnd(@NonNull DownloadTask task, int blockIndex, int responseCode, @NonNull Map<String, List<String>> responseHeaderFields);
-void infoReady(DownloadTask task, @NonNull BreakpointInfo info, boolean fromBreakpoint, @NonNull Listener4Assist.Listener4Model model);
+void taskStart(DownloadTask task);
+void connectStart(DownloadTask task, int blockIndex, Map<String, List<String>> requestHeaderFields);
+void connectEnd(DownloadTask task, int blockIndex, int responseCode, Map<String, List<String>> responseHeaderFields);
+void infoReady(DownloadTask task, BreakpointInfo info, boolean fromBreakpoint, Listener4Assist.Listener4Model model);
 void progressBlock(DownloadTask task, int blockIndex, long currentBlockOffset)
 void progress(DownloadTask task, long currentOffset);
 void blockEnd(DownloadTask task, int blockIndex, BlockInfo info);
-void taskEnd(DownloadTask task, EndCause cause, @Nullable Exception realCause, @NonNull Listener4Assist.Listener4Model model);
+void taskEnd(DownloadTask task, EndCause cause, Exception realCause, Listener4Assist.Listener4Model model);
 }
 ```
 
@@ -230,56 +263,53 @@ void taskEnd(DownloadTask task, EndCause cause, @Nullable Exception realCause, @
 
 ```
 class DownloadListener4WithSpeed {
-void taskStart(@NonNull DownloadTask task);
-void connectStart(@NonNull DownloadTask task, int blockIndex, @NonNull Map<String, List<String>> requestHeaderFields);
-void connectEnd(@NonNull DownloadTask task, int blockIndex, int responseCode, @NonNull Map<String, List<String>> responseHeaderFields);
-void infoReady(@NonNull DownloadTask task, @NonNull BreakpointInfo info, boolean fromBreakpoint, @NonNull Listener4SpeedAssistExtend.Listener4SpeedModel model);
-void progressBlock(@NonNull DownloadTask task, int blockIndex, long currentBlockOffset, @NonNull SpeedCalculator blockSpeed);
-void progress(@NonNull DownloadTask task, long currentOffset, @NonNull SpeedCalculator taskSpeed);
-void blockEnd(@NonNull DownloadTask task, int blockIndex, BlockInfo info, @NonNull SpeedCalculator blockSpeed);
-void taskEnd(@NonNull DownloadTask task, @NonNull EndCause cause, @Nullable Exception realCause, @NonNull SpeedCalculator taskSpeed);
+void taskStart(DownloadTask task);
+void connectStart(DownloadTask task, int blockIndex, Map<String, List<String>> requestHeaderFields);
+void connectEnd(DownloadTask task, int blockIndex, int responseCode, Map<String, List<String>> responseHeaderFields);
+void infoReady(DownloadTask task, BreakpointInfo info, boolean fromBreakpoint, Listener4SpeedAssistExtend.Listener4SpeedModel model);
+void progressBlock(DownloadTask task, int blockIndex, long currentBlockOffset, SpeedCalculator blockSpeed);
+void progress(DownloadTask task, long currentOffset, SpeedCalculator taskSpeed);
+void blockEnd(DownloadTask task, int blockIndex, BlockInfo info, SpeedCalculator blockSpeed);
+void taskEnd(DownloadTask task, EndCause cause, Exception realCause, SpeedCalculator taskSpeed);
 }
 ```
 
 ![](https://docs.qnsdk.com/listener.png)
 
 
-### 主要步骤
+### 下载步骤
 
-1. 下载前检查 ：DownloadDispatcher
+1. 任务的调度和检查 ：DownloadDispatcher
 	- 检查本地是否已经存在 passIfAlreadyCompleted ? COMPLETED : 重新下载
 	- 检查任务是否冲突，是否有相同的任务已经在任务队列里面了 ：SAME_TASK_BUSY
-	- 检查文件是否冲突，是否有两个任务的 url 相同 ：FILE_BUSY
+	- 检查文件是否冲突，是否有两个任务的 uri 相同 ：FILE_BUSY
 	- 通过一个 DownloadTask 创建一个 DownloadCall
-	- 检查当前正在并行的任务数量是否超过最大并行数量，如果超过则加入到 readyAsyncCalls，否则就加入到 runningAsyncCalls，并 execute
+	- 检查当前正在并行的任务数量是否超过最大并行数量，如果超过则加入到准备队列中，没有超过就加入到运行队列中，并调用 DownloadCall 的 execute 方法
 
-2. 一个任务下载执行 ：DownloadCall  
+2. 一个任务真正开始下载执行 ：DownloadCall  
 	- 任务开始，进行回调 taskStart
 	- 检查 task 的参数是否合理（url length > 0 ?）
-	- 从数据库里拿断点信息，如果找不到则创建一个新的，并合 task 绑定
-	- 创建一个 DownloadConnection 与服务器进行建立连接
+	- 从数据库里拿断点信息 BreakpointInfo，如果找不到则创建一个新的
+	- 创建一个 DownloadConnection 与服务器进行建立连接（Range ：bytes=0-0）
 	- 对远端服务器进行检查，检查是否支持断点续传，并获取文件大小， etag，是否 chunked 等信息
-	- 从远端服务器来检查之前的断点信息是否能够恢复，比如之前检查的 http response 是 201，205 则无法恢复
-	- 从本地文件和断点信息来检查是否能够恢复，比如本地文件是否已经被删除，断点信息是否和本地文件不匹配，则不允许恢复
+	- 从远端服务器获取信息来检查是否出现异常
+	- 检查本地文件和断点信息是否匹配，比如本地文件是否已经被删除
 	- 如果不允许恢复
 		- 把本地文件删除
 		- 重新把一个任务平均分块（默认策略 ：文件大小在0-1MB、1-5MB、5-50MB、50-100MB、100MB以上时分别开启1、2、3、4、5个线程进行下载。）然后把信息更新到 BreakpointInfo 中
 		- 回调用户 ：downloadFromBeginning
 		- 通过 task 中 BreakpointInfo 开始下载
 	- 如果允许恢复，则从断点处开始下载
-		- 回调用户 ：downloadFromBeginning
+		- 回调用户 ：downloadFromBreakpoint
 		- 通过 task 中 BreakpointInfo 开始下载
-	- 通过  BreakpointInfo 中的信息把一个 DownloadCall 分解为多个 block 子任务进行下载
+	- 通过 BreakpointInfo 中的信息把一个 DownloadCall 分解为多个 block 子任务进行下载
 
-3. 一个 block 的下载执行 ：DownloadChain
+3. 一个 block 开始下载执行 ：DownloadChain
 	- 创建一个 DownloadConnection ，如果有重定向，则直接用重定向之后的地址进行创建
 	- 增加 header，包括 User-Agent ，Range ，If-Match等
 	- 开始建立连接，回调 connectStart
 	- 链接结束，得到 ResponseCode，ResponseHeaderFields 等信息，并回调 connectEnd
-	- 检查是否能够恢复
-	- 更新信息 responseContentLength
-	- 异常判定：block num 为 1 时，response 获取的 length 与存储的 info 的 length 不一致，则更新 info ，并重新下载
-	-  如果没有异常，开始写文件
-	-  outputStream 要先进行 seek 到 Range 处再开始写入
-
-
+	- 再次进行异常检查，比如只有一个 block 的时候，response 获取的 length 与 info 的 length 不一致，则更新 info ，并重新下载
+	- 如果没有异常，开始写文件
+	- outputStream 要先进行 seek 到 Range left 处再开始写入
+	-  所有的 block 下载完，任务结束
