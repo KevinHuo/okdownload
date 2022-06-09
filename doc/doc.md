@@ -23,9 +23,9 @@ DownloadTask task = new DownloadTask.Builder(url, parentFile)
 
                 .setAutoCallbackToUIThread(true) //是否在主线程通知调用者，默认为true
 
-                //.setHeaderMapFields(Map<String, List<String>> headerMapFields) //设置请求头
+                .setHeaderMapFields(Map<String, List<String>> headerMapFields) //设置请求头
 
-                //.addHeader(String key, String value) //追加请求头
+                .addHeader(String key, String value) //追加请求头
 
                 .setPriority(0) //设置优先级，默认值是0，值越大下载优先级越高
 
